@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内网云存储系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .toolbar {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .file-info {
+            padding: 15px 30px;
+            background: #e3f2fd;
+            color: #1976d2;
+            font-size: 14px;
+            border-bottom: 1px solid #bbdefb;
+        }
+
+        .file-list {
+            padding: 30px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .file-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-color: #667eea;
+        }
+
+        .file-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .file-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+
+        .file-meta {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .download-btn {
+            background: #4caf50;
+            color: white;
+        }
+
+        .download-btn:hover {
+            background: #45a049;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #da190b;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-progress {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            min-width: 300px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            .file-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .file-icon {
+                margin-bottom: 15px;
+            }
+
+            .file-actions {
+                width: 100%;
+                justify-content: flex-end;
+                margin-top: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📁 云存储系统</h1>
+            <p>内网文件共享中心 - 访问端口: 10000</p>
+        </div>
+
+        <div class="toolbar">
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                📤 上传文件
+            </button>
+            <input type="file" id="fileInput" multiple onchange="handleFileUpload(event)">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 搜索文件..." oninput="filterFiles()">
+            </div>
+        </div>
+
+        <div class="file-info">
+            📍 共享文件夹: <span id="folderPath"></span> | 📊 文件总数: <span id="fileCount">0</span>
+        </div>
+
+        <div class="file-list" id="fileList">
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                    <polyline points="13 2 13 9 20 9"></polyline>
+                </svg>
+                <p>暂无文件，点击"上传文件"开始使用</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="upload-progress hidden" id="uploadProgress">
+        <div>上传中...</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div id="uploadStatus"></div>
+    </div>
+
+    <script>
+        // 配置
+        const CONFIG = {
+            API_BASE: '', // API 基础路径，空字符串表示相对路径
+            MAX_FILE_SIZE: 500 * 1024 * 1024 // 最大文件大小 500MB
+        };
+
+        // 缓存 DOM 元素
+        const DOM = {
+            folderPath: null,
+            fileCount: null,
+            fileList: null,
+            fileInput: null,
+            searchInput: null,
+            uploadProgress: null,
+            progressFill: null,
+            uploadStatus: null
+        };
+
+        // 文件数据
+        let files = [];
+        let serverFolderPath = '';
+        let searchTimeout = null;
+
+        // 初始化 DOM 缓存
+        function initDOM() {
+            DOM.folderPath = document.getElementById('folderPath');
+            DOM.fileCount = document.getElementById('fileCount');
+            DOM.fileList = document.getElementById('fileList');
+            DOM.fileInput = document.getElementById('fileInput');
+            DOM.searchInput = document.getElementById('searchInput');
+            DOM.uploadProgress = document.getElementById('uploadProgress');
+            DOM.progressFill = document.getElementById('progressFill');
+            DOM.uploadStatus = document.getElementById('uploadStatus');
+        }
+
+        // 获取服务器配置
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const data = await response.json();
+                if (data.success) {
+                    serverFolderPath = data.folder_path;
+                    CONFIG.MAX_FILE_SIZE = data.max_file_size;
+                    if (DOM.folderPath) {
+                        DOM.folderPath.textContent = serverFolderPath;
+                    }
+                }
+            } catch (e) {
+                console.error('加载配置失败:', e);
+            }
+        }
+
+        // 从服务器加载文件列表
+        async function loadFiles() {
+            try {
+                const response = await fetch('/api/files');
+                const data = await response.json();
+                if (data.success) {
+                    files = data.files.map(file => ({
+                        name: file.name,
+                        size: file.size,
+                        size_display: file.size_display,
+                        date: file.modified
+                    }));
+                    renderFiles(files);
+                }
+            } catch (e) {
+                console.error('加载文件列表失败:', e);
+            }
+        }
+
+        // 获取文件图标（缓存对象）
+        const FILE_ICONS = {
+            'pdf': '📄', 'doc': '📝', 'docx': '📝',
+            'xls': '📊', 'xlsx': '📊', 'ppt': '📽️', 'pptx': '📽️',
+            'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️',
+            'mp4': '🎬', 'mp3': '🎵', 'zip': '📦', 'rar': '📦',
+            'txt': '📃', 'html': '🌐', 'js': '📜', 'css': '🎨',
+            'py': '🐍', 'java': '☕', 'cpp': '⚙️', 'c': '⚙️'
+        };
+
+        // 获取文件图标
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            return FILE_ICONS[ext] || '📁';
+        }
+
+        // 使用 DocumentFragment 优化渲染性能
+        function renderFiles(fileList) {
+            if (!DOM.fileList) return;
+            
+            DOM.fileCount.textContent = fileList.length;
+
+            if (fileList.length === 0) {
+                DOM.fileList.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                            <polyline points="13 2 13 9 20 9"></polyline>
+                        </svg>
+                        <p>暂无文件，点击"上传文件"开始使用</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            fileList.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = `
+                    <div class="file-icon">${getFileIcon(file.name)}</div>
+                    <div class="file-details">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-meta">
+                            📏 ${file.size_display} | 📅 ${file.date}
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="action-btn download-btn" data-index="${index}">
+                            ⬇️ 下载
+                        </button>
+                        <button class="action-btn delete-btn" data-index="${index}">
+                            🗑️ 删除
+                        </button>
+                    </div>
+                `;
+                fragment.appendChild(item);
+            });
+
+            DOM.fileList.innerHTML = '';
+            DOM.fileList.appendChild(fragment);
+
+            // 使用事件委托
+            DOM.fileList.onclick = function(e) {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                
+                const index = parseInt(btn.dataset.index);
+                if (btn.classList.contains('download-btn')) {
+                    downloadFile(index);
+                } else if (btn.classList.contains('delete-btn')) {
+                    deleteFile(index);
+                }
+            };
+        }
+
+        // 格式化文件大小
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+        }
+
+        // 防抖优化搜索
+        function filterFiles() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchTerm = DOM.searchInput.value.toLowerCase();
+                const filtered = files.filter(file => 
+                    file.name.toLowerCase().includes(searchTerm)
+                );
+                renderFiles(filtered);
+            }, 300);
+        }
+
+        // 处理文件上传（上传到服务器）
+        async function handleFileUpload(event) {
+            const selectedFiles = Array.from(event.target.files);
+            if (selectedFiles.length === 0) return;
+
+            console.log('[DEBUG] 开始上传文件', selectedFiles.map(f => f.name));
+
+            DOM.uploadProgress.classList.remove('hidden');
+            let successCount = 0;
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                console.log(`[DEBUG] 上传文件 ${i + 1}/${selectedFiles.length}: ${file.name}, 大小: ${file.size}`);
+                
+                if (file.size > CONFIG.MAX_FILE_SIZE) {
+                    alert(`文件 "${file.name}" 超过 ${formatSize(CONFIG.MAX_FILE_SIZE)} 限制，已跳过`);
+                    continue;
+                }
+
+                const progress = Math.round(((i + 1) / selectedFiles.length) * 100);
+                DOM.progressFill.style.width = progress + '%';
+                DOM.uploadStatus.textContent = `${i + 1}/${selectedFiles.length} - ${file.name}`;
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    console.log('[DEBUG] 发送上传请求到 /api/upload');
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    console.log('[DEBUG] 响应状态:', response.status, response.statusText);
+                    const data = await response.json();
+                    console.log('[DEBUG] 响应数据:', data);
+                    
+                    if (data.success) {
+                        successCount++;
+                        console.log(`[DEBUG] 文件 "${file.name}" 上传成功`);
+                    } else {
+                        console.error(`[DEBUG] 文件 "${file.name}" 上传失败:`, data.message);
+                        alert(`上传 "${file.name}" 失败: ${data.message}`);
+                    }
+                } catch (e) {
+                    console.error('[DEBUG] 上传请求异常:', e);
+                    alert(`上传 "${file.name}" 失败: ${e.message}`);
+                }
+            }
+
+            DOM.uploadStatus.textContent = `成功上传 ${successCount}/${selectedFiles.length} 个文件`;
+
+            setTimeout(() => {
+                DOM.uploadProgress.classList.add('hidden');
+                DOM.progressFill.style.width = '0%';
+                DOM.uploadStatus.textContent = '';
+            }, 2000);
+
+            // 刷新文件列表
+            console.log('[DEBUG] 刷新文件列表');
+            await loadFiles();
+            event.target.value = '';
+        }
+
+        // 下载文件（从服务器下载）
+        function downloadFile(index) {
+            const file = files[index];
+            if (!file) return;
+            console.log('[DEBUG] 下载文件:', file.name);
+            // 使用 encodeURIComponent 处理中文文件名
+            const encodedName = encodeURIComponent(file.name);
+            console.log('[DEBUG] 编码后的文件名:', encodedName);
+            window.location.href = `/api/download/${encodedName}`;
+        }
+
+        // 删除文件（从服务器删除）
+        async function deleteFile(index) {
+            const file = files[index];
+            if (!file) return;
+            
+            if (confirm(`确定要删除 "${file.name}" 吗？`)) {
+                console.log('[DEBUG] 删除文件:', file.name);
+                try {
+                    const response = await fetch('/api/delete', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json; charset=utf-8'
+                        },
+                        body: JSON.stringify({ filename: file.name })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        console.log('[DEBUG] 删除成功');
+                        await loadFiles();
+                    } else {
+                        console.error('[DEBUG] 删除失败:', data.message);
+                        alert(`删除失败: ${data.message}`);
+                    }
+                } catch (e) {
+                    console.error('[DEBUG] 删除请求异常:', e);
+                    alert('删除失败');
+                }
+            }
+        }
+
+        // 显示配置对话框
+        function showConfigDialog() {
+            const newFolder = prompt('请输入共享文件夹路径:', CONFIG.SHARED_FOLDER);
+            if (newFolder && newFolder !== CONFIG.SHARED_FOLDER) {
+                CONFIG.SHARED_FOLDER = newFolder;
+                saveConfig();
+                if (DOM.folderPath) {
+                    DOM.folderPath.textContent = CONFIG.SHARED_FOLDER;
+                }
+            }
+        }
+
+        // 初始化
+        window.onload = function() {
+            initDOM();
+            loadConfig();
+            loadFiles();
+            console.log('云存储系统已启动');
+            console.log('所有连接到同一内网的设备都可以共享文件');
+        };
+    </script>
+</body>
+</html>
